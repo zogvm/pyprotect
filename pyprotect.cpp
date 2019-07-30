@@ -113,11 +113,33 @@ public:
         } else if (!pypath.is_none()) {
             path = pypath.cast<py::list>().cast<vector<string>>();
         }
-
+	    
         if (path.empty()) {
+
+#if 1
             char cwd[MAXPATHLEN];
-            getcwd(cwd, MAXPATHLEN);
-            path = {cwd};
+            getcwd(cwd, MAXPATHLEN); 
+			path = { cwd };
+#else  // PYINSTALLER 兼容 如果用PYINSTALLER 打包 用这段代码
+			//pyinstaller --console --key=1234567890ABCDEF --hidden-import requests --add-data "_zogud.pye;." --add-data "DownLoad.pye;." --onefile --distpath "./dist" --workpath "./build" --icon "zogud.ico" zogud.py
+
+			//根据系统运行位置确认basedir路径
+			py::module sys = py::module::import("sys");
+			bool t = sys.attr("frozen").cast<bool>();
+			if (t)
+			{
+				string s= sys.attr("_MEIPASS").cast<string>();
+				path = { s };
+//#ifdef DEBUG
+				printf("[pss] %s\n", s.c_str());
+//#endif
+			}
+			else
+			{
+				py::print("[ppp]", "no PYINSTALLER");
+			}
+#endif
+
         }
 
         size_t p = fullname.find_last_of('.');
