@@ -1,4 +1,4 @@
-# pyprotect
+# pyprotect (WINDOWS 魔改 修了AES PADDING的bug)
 
 **pyprotect** is a lightweight python code protector, makes your python project harder to reverse engineer.
 
