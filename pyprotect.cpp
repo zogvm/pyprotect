@@ -3,8 +3,13 @@
 #include <list>
 #include <fstream>
 
+#if defined(_WIN32)
+#include "direct.h"
+#define MAXPATHLEN 260
+#else
 #include <unistd.h>
 #include <sys/param.h>
+#endif
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -49,41 +54,28 @@ public:
         printf("[load] %s\n", filename.c_str());
 #endif
 
-        ifstream fsrc(filename);
-
-        if (!fsrc.is_open()) {
-            return;
-        }
-
-        std::string src((std::istreambuf_iterator<char>(fsrc)),
-                        std::istreambuf_iterator<char>());
-
-        uint8_t *buffer = nullptr;
-        buffer = (uint8_t*)malloc(src.length());
-        if (!buffer) {
-            return;
-        }
-        memcpy(buffer, src.data(), src.length());
-        uint32_t len = (uint32_t)src.length();
-
-        AES_CBC_decrypt_buffer(&aesCtx, buffer, len);
-
-        uint8_t padding = buffer[len-1];
-
-        if (padding > 16 || padding < 0) {
+       	uint8_t *buffer = nullptr;
+		uint32_t len = 0;
+		FILE *fp = fopen(filename.c_str(), "rb");
+		if (fp)
+		{
+			fseek(fp, 0, SEEK_END);
+			len=ftell(fp);
+			fseek(fp, 0, SEEK_SET);
+			buffer = (uint8_t*)malloc(len);
+			fread(buffer, 1, len, fp);
+			fclose(fp);
+		}
+		else
+		{
+			printf("error open\n");
+		}
 #ifdef DEBUG
-            printf("[error] padding=%d\n", padding);
+		printf("%d\n", len);
+		printf("%02x %02x\n", buffer[0], buffer[1]);
 #endif
-            return;
-        }
-
-        for (int i = 0; i < padding; ++i) {
-            if (buffer[len-1-i] != padding) {
-                return;
-            }
-        }
-
-        len -= padding;
+        AES_CBC_decrypt_buffer(&aesCtx, buffer, len-len%16);
+        
 #ifdef DEBUG
         printf("[load] python script:\n%.*s\n", len, buffer);
 #endif
