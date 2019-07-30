@@ -32,15 +32,21 @@ def encrypt_file(root, outroot, fname, enc_fname):
     fpath = os.path.join(root, fname)
     with open(fpath, 'rb') as f:
         content = bytearray(f.read())
-    padding = 16 - len(content) % 16
-    content.extend(padding * [padding])
-
+    slen=len(content)
+    dlen = slen - slen % 16
+    print(slen,dlen)
+    dcontentA=content[0:dlen]
+    dcontentB=content[dlen:slen]
+    print(dcontentB)
     cryptor = AES.new(PYPROTECT_KEY, AES.MODE_CBC, PYPROTECT_IV)
 
-    encrypted = cryptor.encrypt(bytes(content))
+    encrypted = cryptor.encrypt(bytes(dcontentA))
     foutpath = os.path.join(outroot, enc_fname)
     with open(foutpath, 'wb') as f:
         f.write(encrypted)
+        f.write(dcontentB)
+    
+    print('Encrypt  %02x %02x ' % (encrypted[0], encrypted[1]))
     print('Encrypt "%s" -> "%s"' % (fpath, foutpath))
 
 
